@@ -4,3 +4,4 @@ template.py
 *.pkl
 *.shv
 *.swp
+*rc
