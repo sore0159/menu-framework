@@ -1,0 +1,6 @@
+*pyc
+*~
+template.py
+*.pkl
+*.shv
+*.swp
