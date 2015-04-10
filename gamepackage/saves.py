@@ -11,12 +11,16 @@ def savefile_arg_parse(savefile_arg):
 
 def load_savefile(controller, savefile_str):
     game_screen = DefaultScreen(controller)
-    return game_screen
+    screen_q = []
+    return game_screen, screen_q
+def save_state(controller, savefile_str):
+    pass
 
 def new_game(controller):
     game_screen = DefaultScreen(controller)
+    screen_q = []
     savefile_str = 'blah'
-    return game_screen, savefile_str
+    return savefile_str, game_screen, screen_q
 
 def expand_savefile_name(name):
     return 'savedata/'+name+'.shv'

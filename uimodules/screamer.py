@@ -6,9 +6,9 @@ from screens.templates import QuitException, ScreenDoneException
 
 class UI(object):
     def __init__(self):
-        self.ui_str = 'basic'
-        self.left_padding = 4
-        self.display_width = 70
+        self.ui_str = 'screamer'
+        self.left_padding = 15
+        self.display_width = 50
         self.event_queue = deque()
 
     def wrap_text(self, text, width):
@@ -31,10 +31,12 @@ class UI(object):
         return wrap_list
 
     def display(self, text, **kwargs):
+        if 'noscream' not in kwargs:
+            text = text.upper()
         if 'center' in kwargs:
             deco = kwargs['center']
             deco_char = {1:'=', 2:'-', 3:' ', 4:'+'}.get(deco, ' ')
-            max_text_width = {}.get(deco, 30)
+            max_text_width = {}.get(deco, 20)
         else: max_text_width = self.display_width
         l_pad = ' '*self.left_padding
         wrap_list = self.wrap_text(text, max_text_width)
@@ -49,7 +51,7 @@ class UI(object):
             return self.event_queue.pop()
         except IndexError:
             try:
-                user_event = raw_input('\n>>> ')
+                user_event = raw_input('\n!!! ')
             except (EOFError, KeyboardInterrupt):
                 self.display('')
                 raise QuitException
