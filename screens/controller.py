@@ -24,8 +24,8 @@ class ScreenController(object):
         if self.savefile_str: self.save_game()
         if new:
             savefile_str = gamepackage.saves.get_new_savename()
-            game_screen = gamepackage.new_game(self)
-            deco_screen = MainDeco(self)
+            game_screen = gamepackage.new_game()
+            deco_screen = MainDeco()
             screen_q = [deco_screen]
         else:
             game_screen , screen_q= gamepackage.saves.get_savedgame(savefile_str)

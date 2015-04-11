@@ -1,5 +1,5 @@
 import saves, gamescreens
 
-def new_game(controller):
-    return gamescreens.GameScreen(controller)
+def new_game():
+    return gamescreens.GameScreen()
 

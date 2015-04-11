@@ -143,8 +143,10 @@ class DefaultSpecials(SpecialCommandCatcher):
     def __init__(self, controller):
         specials = {'quit\n':1, 'file\n':2, 'ui\n':3, 'refresh\n':4, 'menu\n':5, 'help\n':6, 'resume\n':7}
         SpecialCommandCatcher.__init__(self, specials)
-        self.helpstr = "Valid special options: "+' '.join(['#'+x.strip() for x in sorted(self.specials)])+'\nType #help to for full description'
-        if not controller.current_screen.is_menu and not controller.menu_queue:
+        self.helpstr = "Special options: "+' '.join(['#'+x.strip() for x in sorted(self.specials)])+'\nType #help to for full description'
+        bool1 = (not controller.current_screen.is_menu and not controller.menu_queue)
+        bool2 = not controller.savefile_str
+        if bool1 or bool2:
             self.specials.pop('resume\n')
             self.helpstr = self.helpstr.replace('#resume', '(#resume)')
     def execute_special(self, controller, trigger):
@@ -166,7 +168,10 @@ class DefaultSpecials(SpecialCommandCatcher):
             raise ScreenDoneException
     def fail_message(self, controller, event_str):
         if event_str and event_str == 'resume':
-            controller.display("You are already in game!")
+            if not controller.savefile_str:
+                controller.display("You do not have a game loaded!")
+            else:
+                controller.display("You are already in game!")
         else:
             SpecialCommandCatcher.fail_message(self, controller, event_str)
     def long_help_display(self, controller):
