@@ -4,6 +4,7 @@ class GameScreen(BaseScreen):
     def __init__(self, controller):
         self.count = 0
         BaseScreen.__init__(self, controller)
+        self.is_menu = False
 
     def __repr__(self):
         return "Game Menu"

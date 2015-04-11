@@ -77,8 +77,9 @@ if __name__ == '__main__':
     uimodule_list = uimodules.uimodule_list
     ui_help_str = uimodules.ui_help_str
     ######
-    argparser = argparse.ArgumentParser(description='========== GORILLA ISLAND MAIN MENU ==========', epilog='Associated Files: config.rc has variables "FIXD SV =" and "FIXD UI =" you can use to set defaults: read there for more.')
+    argparser = argparse.ArgumentParser(description='Savefile/UI Menusystem and Screen Control for Commandline Python Game', epilog='Associated Files: config.rc has variables "FIXD SV =" and "FIXD UI =" you can use to set defaults: read there for more.')
     ###### I'D LIKE TO HAVE AN ARGUMENT ######
+    # I bet that's in a lot of comments of people who use argparser
     argparser.add_argument('-u', '--uimodule', default=None, help=ui_help_str , metavar='UIMODULE', choices=uimodule_list)
     savegroup = argparser.add_mutually_exclusive_group()
     savegroup.add_argument('savefile', nargs='?', metavar='SAVEFILE', help=savefile_help_str, default=None, choices=savefile_list)

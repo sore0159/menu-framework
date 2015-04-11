@@ -10,6 +10,8 @@ class UI(object):
         self.left_padding = 4
         self.display_width = 70
         self.event_queue = deque()
+        self.input_prompt = '\n>>> '
+        self.char_dict = {1:'=', 2:'-', 3:' ', 4:'+'}
 
     def wrap_text(self, text, width):
         if not text: return ['']
@@ -34,17 +36,17 @@ class UI(object):
         l_pad = ' '*self.left_padding
         divider = kwargs.get('divider', None)
         if divider:
-            div_char = {1:'=', 2:'-', 3:' ', 4:'+'}.get(divider, '-')
+            div_char = self.char_dict.get(divider, '-')
             print l_pad+(div_char*self.display_width)
             return 
         deco = kwargs.get('center', None)
         if deco:
-            deco_char = {1:'=', 2:'-', 3:' ', 4:'+'}.get(deco, ' ')
+            deco_char = self.char_dict.get(deco, ' ')
             max_text_width = {}.get(deco, 30)
         else: max_text_width = self.display_width
         if 'indent' in kwargs:
             max_text_width -= 4
-            l_pad+=' '*4
+            l_pad+=' '*(4*kwargs['indent'])
         wrap_list = self.wrap_text(text, max_text_width)
         for line in wrap_list:
             if 'center' in kwargs:
@@ -57,7 +59,7 @@ class UI(object):
             return self.event_queue.pop()
         except IndexError:
             try:
-                user_event = raw_input('\n>>> ')
+                user_event = raw_input(self.input_prompt)
             except (EOFError, KeyboardInterrupt):
                 self.display('')
                 raise QuitException

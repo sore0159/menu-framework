@@ -14,9 +14,8 @@ class TemplateScreen(object):
         self.default_specials = True
         self.no_display = False
         self.display_flag = True
-        self.dissapear_on_quit = False
+        self.is_menu = True
         self.controller = controller
-        self.previous_screen = controller.current_screen
         self.bubbles = {}
         self.default_bubble = default_bubble
         self.event_queue = []
@@ -31,25 +30,20 @@ class TemplateScreen(object):
                 self.trigger_specials()
                 return 0
             elif event == '\n' and self.event_queue:
+                attempt = ''.join(self.event_queue)
                 self.event_queue = []
-                self.display("Not a valid option: type # for special options")
-        for char in ['']+self.event_queue:
-            event+=char
+                self.display("%s is not a valid option: type # for special options"%attempt)
+        for char in reversed(self.event_queue+['']):
+            event = char+event
             if event in self.event_triggers:
                 self.event_queue = []
                 self.event_display(event)
                 return self.event_triggers[event]
         else:
-            self.event_queue.append(base_event)
-            pass_code = self.pass_event(base_event)
+            if base_event != '\n': self.event_queue.append(base_event)
             return 0
     def event_display(self, event):
-        self.display('\nExecuting command %s...'%event)
-    def pass_event(self, event):
-        if self.previous_screen:
-            return self.previous_screen.passed_event(event)
-        else:
-            return self.controller.passed_event(event)
+        self.display('\nExecuting command %s...'%event.strip())
     def clear_triggers(self):
         self.event_triggers = {}
     def add_trigger(self, event_str, trigger_int):
@@ -76,16 +70,14 @@ class TemplateScreen(object):
         For example, when you're a menu that's quitting, or if you need to pass args to next_screen'''
         self.controller.next_screen(**kwargs)
     def after_me_goto(self, screen):
-        screen.previous_screen = self.previous_screen
-        self.controller.screen_queue.append(screen)
+        if screen.is_menu:
+            self.controller.menu_queue.append(screen)
+        else:
+            self.controller.screen_queue.append(screen)
     def run(self):
         if self.display_flag:
             self.full_display()
-        try:
-            trigger = self.get_event()
-        except QuitException:
-            if self.dissapear_on_quit and self.controller.current_screen == self: self.controller.current_screen = None
-            raise
+        trigger = self.get_event()
         if trigger: 
             self.display_flag = True
             self.execute_trigger(trigger)
@@ -99,8 +91,6 @@ class TemplateScreen(object):
         specials = {'help':1}
         specialscreen = SpecialCommandCatcher(self.controller, specials)
         self.controller.add_screen(specialscreen)
-    def passed_event(self, event):
-        return self.pass_event(event)
     def set_state(self):
         self.clear_state()
         self.state('Template Screen', center=1)
@@ -151,6 +141,7 @@ class SpecialCommandCatcher(TemplateScreen):
 class DecorationScreen(TemplateScreen):
     def __init__(self, controller):
         TemplateScreen.__init__(self, controller)
+        self.is_menu = False
     def run(self):
         raise ScreenDoneException
     def set_state(self):pass

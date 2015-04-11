@@ -21,7 +21,9 @@ def get_savedgame(savefile_str):
 def save_game(controller):
     savefile_str = controller.savefile_str
     assert savefile_str
-    save_tuple = (controller.current_screen, controller.screen_queue)
+    cur_screen = controller.current_screen 
+    if cur_screen.is_menu: cur_screen = None
+    save_tuple = (cur_screen, controller.screen_queue)
     target = open(expand_savefile_name(savefile_str), 'wb')
     pickle.dump(save_tuple, target, -1)
     target.close()
