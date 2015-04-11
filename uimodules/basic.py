@@ -30,13 +30,21 @@ class UI(object):
                 tic = 1
         return wrap_list
 
-    def display(self, text, **kwargs):
-        if 'center' in kwargs:
-            deco = kwargs['center']
+    def display(self, text='', **kwargs):
+        l_pad = ' '*self.left_padding
+        divider = kwargs.get('divider', None)
+        if divider:
+            div_char = {1:'=', 2:'-', 3:' ', 4:'+'}.get(divider, '-')
+            print l_pad+(div_char*self.display_width)
+            return 
+        deco = kwargs.get('center', None)
+        if deco:
             deco_char = {1:'=', 2:'-', 3:' ', 4:'+'}.get(deco, ' ')
             max_text_width = {}.get(deco, 30)
         else: max_text_width = self.display_width
-        l_pad = ' '*self.left_padding
+        if 'indent' in kwargs:
+            max_text_width -= 4
+            l_pad+=' '*4
         wrap_list = self.wrap_text(text, max_text_width)
         for line in wrap_list:
             if 'center' in kwargs:
@@ -54,9 +62,10 @@ class UI(object):
                 self.display('')
                 raise QuitException
             if not user_event: 
-                return ''
+                return '\n'
             else:
                 self.event_queue.extendleft(user_event)
+                self.event_queue.extendleft('\n')
                 return self.event_queue.pop()
 
 

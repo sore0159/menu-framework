@@ -4,11 +4,11 @@ import os
 
 import gamepackage
 import uimodules
-from screens.templates import ScreenController
+from default.controller import ScreenController
 
 ###########
-controller_lastfile = 'savedata/'+sys.argv[0][:-3]+'_last.rc'
-controller_fixedfile = 'fixed_data.rc'
+controller_lastfile = 'savedata/'+sys.argv[0][:-3]+'.rc'
+controller_fixedfile = 'config.rc'
 
 def check_config_files():
     sv_expand = gamepackage.saves.expand_savefile_name
@@ -57,6 +57,7 @@ def write_config_file(last_save, last_ui):
     except IOError:
         pass
     else:
+        config_file.write("##### COMPUTER GENERATED #####\n")
         if last_save:
             config_file.write('LAST SV = '+last_save+'\n')
         if last_ui:
@@ -67,12 +68,12 @@ def write_config_file(last_save, last_ui):
 
 if __name__ == '__main__':
     ##### let the gamepackage decide how save files are handled
-    savefile_list = gamepackage.saves.savefile_list
+    savefile_list = gamepackage.saves.get_savefile_list()
     savefile_help_str = gamepackage.saves.savefile_help_str
     ##### I guess let the ui package decide how the ui modules are handled?
     uimodule_list = uimodules.uimodule_list
     ui_help_str = uimodules.ui_help_str
-    argparser = argparse.ArgumentParser(description='========== GORILLA ISLAND MAIN MENU ==========', epilog='Associated Files: fixed_data.rc has "FIXD SV =" and "FIXD UI =" vars to set default startup arguments: command line arguements passed at runtime, if present, will override these options.  Also savedata/mainmenu_last.rc will try to store data on your UI and savefile when you quit, but this will be overridden by either commandline options or FIXED vars, if present.')
+    argparser = argparse.ArgumentParser(description='========== GORILLA ISLAND MAIN MENU ==========', epilog='Associated Files: config.rc has variables "FIXD SV =" and "FIXD UI =" you can use to set default startup arguments: command line arguements passed at runtime, if present, will override these options.  Also savedata/mainmenu.rc will try to store data on your UI and savefile when you quit, but this will be overridden by either commandline options or FIXED vars, if present.')
     argparser.add_argument('-u', '--uimodule', default=None, help=ui_help_str , metavar='UIMODULE', choices=uimodule_list)
     arggroup = argparser.add_mutually_exclusive_group()
     arggroup.add_argument('savefile', nargs='?', metavar='SAVEFILE', help=savefile_help_str, default=None, choices=savefile_list)
@@ -91,8 +92,8 @@ if __name__ == '__main__':
     if not savefile and not new: savefile = config_save
     #### OKAY READY GO
     controller = ScreenController(uimodule_str, savefile, new)
-    controller.run()
+    controller.run_loop()
     #### Wrap up
     savefile, ui_mod = controller.last_usage_info()
     write_config_file(savefile, ui_mod)
-    
+   
