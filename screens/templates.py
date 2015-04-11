@@ -1,13 +1,20 @@
-from collections import defaultdict
-import gamepackage
+####### CONTENTS #######
+# DecorationScreen
+# SpecialCommandCatcher
+# TemplateScreen
+# ScreenDoneException
+# QuitException
+#######################
+
 class ScreenDoneException(Exception): pass
 class QuitException(Exception):pass
 
-class BaseScreen(object):
+class TemplateScreen(object):
     def __init__(self, controller, default_bubble=1):
         self.default_specials = True
         self.no_display = False
         self.display_flag = True
+        self.dissapear_on_quit = False
         self.controller = controller
         self.previous_screen = controller.current_screen
         self.bubbles = {}
@@ -21,7 +28,7 @@ class BaseScreen(object):
         if self.default_specials: 
             if event == '#':
                 self.event_queue = []
-                self.trigger_default_specials()
+                self.trigger_specials()
                 return 0
             elif event == '\n' and self.event_queue:
                 self.event_queue = []
@@ -44,7 +51,7 @@ class BaseScreen(object):
         else:
             return self.controller.passed_event(event)
     def clear_triggers(self):
-        self.event_triggers = {'#':'s'}
+        self.event_triggers = {}
     def add_trigger(self, event_str, trigger_int):
         self.event_triggers[event_str] = trigger_int
 
@@ -71,13 +78,14 @@ class BaseScreen(object):
     def after_me_goto(self, screen):
         screen.previous_screen = self.previous_screen
         self.controller.screen_queue.append(screen)
-    def trigger_default_specials(self):
-        specials = DefaultSpecials(self.controller)
-        self.controller.add_screen(specials)
     def run(self):
         if self.display_flag:
             self.full_display()
-        trigger = self.get_event()
+        try:
+            trigger = self.get_event()
+        except QuitException:
+            if self.dissapear_on_quit and self.controller.current_screen == self: self.controller.current_screen = None
+            raise
         if trigger: 
             self.display_flag = True
             self.execute_trigger(trigger)
@@ -87,11 +95,15 @@ class BaseScreen(object):
     ######### OVERLOAD ########
     def __repr__(self):
         return "Template Menu"
+    def trigger_specials(self):
+        specials = {'help':1}
+        specialscreen = SpecialCommandCatcher(self.controller, specials)
+        self.controller.add_screen(specialscreen)
     def passed_event(self, event):
         return self.pass_event(event)
     def set_state(self):
         self.clear_state()
-        self.state('Base Screen', center=1)
+        self.state('Template Screen', center=1)
         self.add_trigger('q', 1)
         self.display_flag = True
 
@@ -100,9 +112,9 @@ class BaseScreen(object):
         self.display('EVENT QUEUE: '+''.join(self.event_queue))
         if trigger == 1: raise ScreenDoneException
 
-class SpecialCommandCatcher(BaseScreen):
+class SpecialCommandCatcher(TemplateScreen):
     def __init__(self, controller, special_dict):
-        BaseScreen.__init__(self, controller)
+        TemplateScreen.__init__(self, controller)
         self.no_display = True
         self.specials = special_dict
         self.event_so_far = ''
@@ -123,91 +135,27 @@ class SpecialCommandCatcher(BaseScreen):
         else:
             ev_len = len(self.event_so_far)
             if event == '\n' and self.event_so_far not in [x[:ev_len] for x in self.specials]:
-                if self.event_so_far.strip():
-                    self.display("'%s' is an invalid special option!"%self.event_so_far.strip())
-                self.display(self.helpstr)
+                self.fail_message(self.event_so_far.strip())
                 self.die()
+
     ###### OVERLOAD #######
     def execute_special(self, trigger):
         pass
-
+    def fail_message(self, event_str):
+        if event_str and event_str !='help':
+            self.display("'%s' is an invalid special option!"%self.event_so_far.strip())
+        self.display(self.helpstr)
     def __repr__(self):
         return "Special Command Catcher"
 
-class DefaultSpecials(SpecialCommandCatcher):
+class DecorationScreen(TemplateScreen):
     def __init__(self, controller):
-        specials = {'quit\n':1, 'file\n':2, 'ui\n':3, 'refresh\n':4, 'menu\n':5}
-        SpecialCommandCatcher.__init__(self, controller, specials)
-        self.helpstr = "Valid special options: "+' '.join(['#'+x.strip() for x in self.specials])
-    def execute_special(self, trigger):
-        if trigger == 1:
-            self.die()
-            raise QuitException
-        elif trigger == 2:
-            self.display('Current save file: %s'%self.controller.savefile_str)
-        elif trigger == 3:
-            self.display('Current ui module: %s'%self.controller.ui.ui_str)
-        elif trigger == 4:
-            raise ScreenDoneException
-        elif trigger == 5:
-            mainmenu = DefaultMenu(self.controller)
-            self.after_me_goto(mainmenu)
-    def __repr__(self):
-        return "Special Action Menu"
-
-class DefaultMenu(BaseScreen):
-    def __init__(self, controller):
-        BaseScreen.__init__(self, controller)
-    def __repr__(self):
-        return "Main Menu"
-
-    def set_state(self):
-        self.clear_state()
-        self.clear_triggers()
-        self.state('Main Menu', center=2)
-        if len(self.controller.screen_queue)>1:
-            self.add_trigger('r', 1)
-            self.state("(r)Resume Game", indent=1)
-        self.add_trigger('n', 2)
-        self.state("(n)New Game", indent=1)
-        savefile_list = gamepackage.saves.get_savefile_list()
-        savefile_str = self.controller.savefile_str
-        if savefile_str:
-            expanded = gamepackage.saves.expand_savefile_name(savefile_str)
-            savefile_list = [x for x in savefile_list if not x in (savefile_str,expanded)]
-        if savefile_list:
-            self.add_trigger('l', 3)
-            if savefile_str:
-                self.state("(l)Load another saved game", indent=1)
-            else:
-                self.state("(l)Load a saved game", indent=1)
-        self.add_trigger('u', 4)
-        self.state('(u)Change UI', indent=1)
-        self.add_trigger('q', 5)
-        self.state('(q)Quit game', indent=1)
-
-    def execute_trigger(self, trigger):
-        if trigger == 1:
-            raise ScreenDoneException
-        elif trigger == 2:
-            self.controller.load_save(new=True)
-        elif trigger == 3:
-            pass
-        elif trigger == 4:
-            pass
-        elif trigger == 5:
-            self.die()
-            raise QuitException
-
-class DecorationScreen(BaseScreen):
-    def __init__(self, controller):
-        BaseScreen.__init__(self, controller)
+        TemplateScreen.__init__(self, controller)
     def run(self):
         raise ScreenDoneException
     def set_state(self):pass
     def __repr__(self):
         return "decoration"
-
 
 
 

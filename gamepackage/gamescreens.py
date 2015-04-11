@@ -1,4 +1,4 @@
-from screens.templates import BaseScreen, ScreenDoneException, QuitException
+from screens.defaults import BaseScreen
 
 class GameScreen(BaseScreen):
     def __init__(self, controller):

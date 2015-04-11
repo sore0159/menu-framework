@@ -1,2 +1,14 @@
-FIXD UI = basic
-#FIXD SV = ????
+##################### CONFIGURATION ########################
+# For "FIXED UI =" or "FIXD SV =" you can set defaults here.
+# Values can be either the short name (e.g., 'save000', 'screamer')
+# or LAST if you want the game to always try to load whatever
+# you used last.  If LAST is set but no file/info can be found, it
+# defaults to 'basic' ui and starts the game with no loaded save.
+############################################################
+
+########## EXAMPLES ###########
+# Just remove the # to enable them
+
+#FIXD UI = basic
+#FIXD SV = LAST
+
