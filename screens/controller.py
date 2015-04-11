@@ -34,9 +34,9 @@ class ScreenController(object):
             self.display('Creating save file %s...'%self.savefile_str)
         else:
             self.display('Loading save file %s...'%self.savefile_str)
-        self.screen_queue = [self.control(x) for x in screen_q]
+        self.screen_queue = screen_q
         self.menu_queue = []
-        self.select_screen(self.control(game_screen))
+        self.select_screen(game_screen)
 
     def control(self, screen):
         if screen: screen.controller = self
@@ -49,7 +49,6 @@ class ScreenController(object):
     def select_screen(self, screen, **kwargs):
         self.current_screen = screen
         if screen and 'norefresh' not in kwargs:
-            screen.set_state()
             screen.display_flag = True
 
     def add_screen(self, screen):
@@ -68,9 +67,9 @@ class ScreenController(object):
         else:
             self.select_screen(None)
             self.savefile_str = None
-            deco_screen = MainDeco(self)
+            deco_screen = MainDeco()
             self.add_screen(deco_screen)
-            next_screen = DefaultMenu(self)
+            next_screen = DefaultMenu()
             self.add_screen(next_screen)
 
     def load_ui(self, ui_str):
@@ -79,8 +78,6 @@ class ScreenController(object):
         self.display("UI '%s' loaded..."%ui_str)
     def get_event(self):
         return self.ui.get_event()
-    def passed_event(self, event):
-        return False
     def display(self, text, **kwargs):
         self.ui.display(text, **kwargs)
     def full_display(self):
@@ -100,9 +97,12 @@ class ScreenController(object):
             self.next_screen()
         else:
             try:
-                self.current_screen.run()
-            except ScreenDoneException:
-                self.next_screen()
+                self.current_screen.run(self)
+            except ScreenDoneException as e:
+                if e.norefresh:
+                    self.next_screen(norefresh=1)
+                else:
+                    self.next_screen()
 
     def run_loop(self):
         self.display("Starting game...")
@@ -111,10 +111,7 @@ class ScreenController(object):
                 self.run()
         except QuitException: pass
         finally:
-            self.quit()
+            if self.savefile_str: self.save_game()
+            self.display("Goodbye", center=2)
+            self.display("")
 
-    def quit(self):
-        if self.savefile_str:
-            self.save_game()
-        self.display("Goodbye", center=2)
-        self.display("")

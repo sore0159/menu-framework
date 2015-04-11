@@ -23,12 +23,12 @@ def check_config_files(last_flag = False):
         for i,line in enumerate(fixedfile):
             if i > 30: break  # just a saftey
             if len(line)>10:
-                if line[:9] == 'FIXD SV =':
-                    temp_save = line[9:].strip()
+                if line[:10] == 'FIXED SV =':
+                    temp_save = line[10:].strip()
                     if os.path.isfile(sv_expand(temp_save)) or temp_save.upper()=='LAST':
                         savefile_str = temp_save
-                elif line[:9] == 'FIXD UI =':
-                    temp_ui = line[9:].strip()
+                elif line[:10] == 'FIXED UI =':
+                    temp_ui = line[10:].strip()
                     if ui_expand(temp_ui) in sys.modules or temp_ui.upper=='LAST':
                         ui_str = temp_ui
         fixedfile.close()
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     uimodule_list = uimodules.uimodule_list
     ui_help_str = uimodules.ui_help_str
     ######
-    argparser = argparse.ArgumentParser(description='Savefile/UI Menusystem and Screen Control for Commandline Python Game', epilog='Associated Files: config.rc has variables "FIXD SV =" and "FIXD UI =" you can use to set defaults: read there for more.')
+    argparser = argparse.ArgumentParser(description='Savefile/UI Menusystem and Screen Control for Commandline Python Game', epilog='Associated Files: config.rc has variables "FIXED SV =" and "FIXED UI =" you can use to set defaults: read there for more.')
     ###### I'D LIKE TO HAVE AN ARGUMENT ######
     # I bet that's in a lot of comments of people who use argparser
     argparser.add_argument('-u', '--uimodule', default=None, help=ui_help_str , metavar='UIMODULE', choices=uimodule_list)

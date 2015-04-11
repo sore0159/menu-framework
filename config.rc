@@ -1,5 +1,5 @@
 ##################### CONFIGURATION ########################
-# For "FIXED UI =" or "FIXD SV =" you can set defaults here.
+# For "FIXED UI =" or "FIXED SV =" you can set defaults here.
 # Values can be either the short name (e.g., 'save000', 'screamer')
 # or LAST if you want the game to always try to load whatever
 # you used last.  If LAST is set but no file/info can be found, it
@@ -9,6 +9,8 @@
 ########## EXAMPLES ###########
 # Just remove the # to enable them
 
-#FIXD UI = basic
-#FIXD SV = LAST
+#FIXED UI = LAST
+#FIXED UI = screamer
+#FIXED SV = LAST
+#FIXED SV = save000
 
