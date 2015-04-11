@@ -5,13 +5,12 @@ class QuitException(Exception):pass
 
 class BaseScreen(object):
     def __init__(self, controller, default_bubble=1):
-        self.default_specials = 1
+        self.default_specials = True
+        self.no_display = False
+        self.display_flag = True
         self.controller = controller
         self.previous_screen = controller.current_screen
-        if self.previous_screen:
-            self.bubbles = self.previous_screen.bubbles
-        else:
-            self.bubbles = {}
+        self.bubbles = {}
         self.default_bubble = default_bubble
         self.event_queue = []
         self.clear_triggers()
@@ -38,7 +37,7 @@ class BaseScreen(object):
             pass_code = self.pass_event(base_event)
             return 0
     def event_display(self, event):
-        self.display('Executing command %s...'%event)
+        self.display('\nExecuting command %s...'%event)
     def pass_event(self, event):
         if self.previous_screen:
             return self.previous_screen.passed_event(event)
@@ -63,15 +62,12 @@ class BaseScreen(object):
         else:
             bubble = self.default_bubble
         self.bubbles[bubble].append((text, kwargs))
-        self.bubbles['display'] = True
     def full_display(self):
-        for level, state_list in sorted(self.bubbles.items()):
-            if level == 'display': continue
-            for line, arg_dict in state_list:
-                self.display(line, **arg_dict)
-        self.bubbles['display'] = False
-    def die(self):
-        self.controller.next_screen()
+        self.controller.full_display()
+    def die(self, **kwargs):
+        '''For when you're done but don't want to raise a DoneExcept.
+        For example, when you're a menu that's quitting, or if you need to pass args to next_screen'''
+        self.controller.next_screen(**kwargs)
     def after_me_goto(self, screen):
         screen.previous_screen = self.previous_screen
         self.controller.screen_queue.append(screen)
@@ -79,14 +75,14 @@ class BaseScreen(object):
         specials = DefaultSpecials(self.controller)
         self.controller.add_screen(specials)
     def run(self):
-        if self.bubbles['display']:
+        if self.display_flag:
             self.full_display()
         trigger = self.get_event()
         if trigger: 
-            self.bubbles['display'] = True
+            self.display_flag = True
             self.execute_trigger(trigger)
         else: 
-            self.bubbles['display'] = False
+            self.display_flag = False
 
     ######### OVERLOAD ########
     def __repr__(self):
@@ -97,6 +93,7 @@ class BaseScreen(object):
         self.clear_state()
         self.state('Base Screen', center=1)
         self.add_trigger('q', 1)
+        self.display_flag = True
 
     def execute_trigger(self, trigger):
         self.display('TRIGGER: %s'%trigger)
@@ -106,6 +103,7 @@ class BaseScreen(object):
 class SpecialCommandCatcher(BaseScreen):
     def __init__(self, controller, special_dict):
         BaseScreen.__init__(self, controller)
+        self.no_display = True
         self.specials = special_dict
         self.event_so_far = ''
         self.helpstr = "Valid special options: "+' '.join([x.strip() for x in self.specials])
@@ -114,6 +112,7 @@ class SpecialCommandCatcher(BaseScreen):
         return base_event
     def set_state(self):pass
     def die(self):
+        '''This is a small submenu, no display of its own'''
         self.controller.next_screen(norefresh=1)
     def run(self):
         event = self.get_event()
@@ -149,7 +148,7 @@ class DefaultSpecials(SpecialCommandCatcher):
         elif trigger == 3:
             self.display('Current ui module: %s'%self.controller.ui.ui_str)
         elif trigger == 4:
-            self.bubbles['display']= True
+            raise ScreenDoneException
         elif trigger == 5:
             mainmenu = DefaultMenu(self.controller)
             self.after_me_goto(mainmenu)
@@ -159,11 +158,6 @@ class DefaultSpecials(SpecialCommandCatcher):
 class DefaultMenu(BaseScreen):
     def __init__(self, controller):
         BaseScreen.__init__(self, controller)
-        self.clear_state(bubble=0)
-        self.state('Gorilla Island', center=1, bubble=0)
-        self.clear_state(bubble=10)
-        self.state('', bubble=10)
-        self.state('', divider=1, bubble=10)
     def __repr__(self):
         return "Main Menu"
 
@@ -171,7 +165,7 @@ class DefaultMenu(BaseScreen):
         self.clear_state()
         self.clear_triggers()
         self.state('Main Menu', center=2)
-        if self.previous_screen:
+        if len(self.controller.screen_queue)>1:
             self.add_trigger('r', 1)
             self.state("(r)Resume Game", indent=1)
         self.add_trigger('n', 2)
@@ -204,4 +198,16 @@ class DefaultMenu(BaseScreen):
         elif trigger == 5:
             self.die()
             raise QuitException
+
+class DecorationScreen(BaseScreen):
+    def __init__(self, controller):
+        BaseScreen.__init__(self, controller)
+    def run(self):
+        raise ScreenDoneException
+    def set_state(self):pass
+    def __repr__(self):
+        return "decoration"
+
+
+
 
