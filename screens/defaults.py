@@ -153,28 +153,28 @@ class DefaultSpecials(SpecialCommandCatcher):
         if trigger == 1:
             raise QuitException
         elif trigger == 2:
-            controller.display('Current save file: %s'%controller.savefile_str)
+            self.display('Current save file: %s'%controller.savefile_str)
         elif trigger == 3:
-            controller.display('Current ui module: %s'%controller.ui.ui_str)
+            self.display('Current ui module: %s'%controller.ui.ui_str)
         elif trigger == 4:
             controller.full_display()
         elif trigger == 5:
             mainmenu = DefaultMenu()
             controller.menu_queue = [mainmenu]
         elif trigger == 6:
-            self.long_help_display(controller)
+            self.long_help_display()
         elif trigger == 7:
             controller.resume_game()
             raise ScreenDoneException
-    def fail_message(self, controller, event_str):
+    def fail_message(self, event_str):
         if event_str and event_str == 'resume':
             if not controller.savefile_str:
-                controller.display("You do not have a game loaded!")
+                self.display("You do not have a game loaded!")
             else:
-                controller.display("You are already in game!")
+                self.display("You are already in game!")
         else:
-            SpecialCommandCatcher.fail_message(self, controller, event_str)
-    def long_help_display(self, controller):
+            SpecialCommandCatcher.fail_message(self, event_str)
+    def long_help_display(self):
         long_help = '''Special commands:
 #file       -- Display the current savegame file
 #help       -- Display this information
@@ -183,7 +183,7 @@ class DefaultSpecials(SpecialCommandCatcher):
 #refresh    -- Redraw the screen (handy if lots of failed prompts are in your way)
 #resume     -- Close all menus and return to the game in progress
 #ui         -- Display the current active UI module'''
-        controller.display(long_help)
+        self.display(long_help)
     def __repr__(self):
         return "Special Action Menu"
 
@@ -193,19 +193,24 @@ class MainMenuSpecials(DefaultSpecials):
         self.specials.pop('menu\n')
         self.helpstr = self.helpstr.replace('#menu', '(#menu)')
 
-    def fail_message(self, controller, event_str):
+    def fail_message(self, event_str):
         if event_str and event_str == 'menu':
-            controller.display("You are already at the main menu!")
+            self.display("You are already at the main menu!")
         else:
-            DefaultSpecials.fail_message(self, controller, event_str)
+            DefaultSpecials.fail_message(self, event_str)
 
 class MainDeco(DecorationScreen):
     def __init__(self):
         DecorationScreen.__init__(self)
         self.clear_state(bubble=0)
-        self.state('Game Title Here', center=1, bubble=0)
+        self.state('Game Name Goes Here', center=1, bubble=0)
         self.clear_state(bubble=10)
         self.state('', bubble=10)
         self.state('', divider=1, bubble=10)
     def __repr__(self):
         return "Main Border"
+
+
+
+
+

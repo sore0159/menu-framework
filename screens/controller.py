@@ -5,11 +5,11 @@ from screens.defaults import DefaultMenu, MainDeco
 
 class ScreenController(object):
     def __init__(self, ui_str=None, savefile_str=None, new=False):
+        self.current_screen = None
         if not ui_str: ui_str = 'basic'
         self.load_ui(ui_str)
         self.screen_queue = []
         self.menu_queue = []
-        self.current_screen = None
         self.savefile_str = None
         if new or savefile_str:
             self.load_save(savefile_str, new)
@@ -42,8 +42,11 @@ class ScreenController(object):
         if screen: screen.controller = self
         return screen
 
-    def save_game(self):
-        self.display('Saving game in file %s...'%self.savefile_str)
+    def save_game(self, **kwargs):
+        if 'quitting' in kwargs:
+            self.real_display('Saving game in file %s...'%self.savefile_str)
+        else:
+            self.display('Saving game in file %s...'%self.savefile_str)
         gamepackage.saves.save_game(self)
 
     def select_screen(self, screen, **kwargs):
@@ -79,7 +82,16 @@ class ScreenController(object):
     def get_event(self):
         return self.ui.get_event()
     def display(self, text, **kwargs):
+        if self.current_screen:
+            self.current_screen.display(text, **kwargs)
+        else:
+            self.real_display(text, **kwargs)
+    def real_display(self, text, **kwargs):
         self.ui.display(text, **kwargs)
+    def temp_display(self, screen):
+        for text, kwargs in screen.temp_display_list:
+            self.real_display(text, **kwargs)
+        screen.temp_display_list = []
     def full_display(self):
         display_bubbles = {}
         for screen in reversed(self.screen_queue+self.menu_queue+[self.current_screen]):
@@ -90,28 +102,31 @@ class ScreenController(object):
                     display_bubbles[num] = stuff
         for num, stuff in sorted(display_bubbles.items()):
             for line, arg_dict in stuff:
-                self.display(line, **arg_dict)
+                self.real_display(line, **arg_dict)
 
     def run(self):
         if not self.current_screen:
             self.next_screen()
         else:
+            screen = self.current_screen
             try:
-                self.current_screen.run(self)
+                screen.run(self)
             except ScreenDoneException as e:
                 if e.norefresh:
                     self.next_screen(norefresh=1)
                 else:
                     self.next_screen()
+            finally:
+                self.temp_display(screen)
 
     def run_loop(self):
-        self.display("Starting game...")
+        self.real_display("Starting game...")
         try:
             while True:
                 self.run()
         except QuitException: pass
         finally:
-            if self.savefile_str: self.save_game()
-            self.display("Goodbye", center=2)
-            self.display("")
+            if self.savefile_str: self.save_game(quitting=True)
+            self.real_display("Goodbye", center=2)
+            self.real_display("")
 
