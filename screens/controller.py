@@ -1,11 +1,12 @@
 import sys
 import gamepackage
-from screens.templates import ScreenDoneException, QuitException
+from screens.templates import ScreenDoneException, QuitException, CloseMenusException
 from screens.defaults import DefaultMenu, MainDeco
 
 class ScreenController(object):
     def __init__(self, ui_str=None, savefile_str=None, new=False):
         self.current_screen = None
+        self.ui = None
         if not ui_str: ui_str = 'basic'
         self.load_ui(ui_str)
         self.screen_queue = []
@@ -15,10 +16,6 @@ class ScreenController(object):
             self.load_save(savefile_str, new)
     def last_usage_info(self):
         return (self.savefile_str, self.ui.ui_str)
-
-    def resume_game(self):
-        self.menu_queue = []
-        if self.current_screen.is_menu: self.current_screen = None
 
     def load_save(self, savefile_str=None, new=False):
         if self.savefile_str: self.save_game()
@@ -38,10 +35,6 @@ class ScreenController(object):
         self.menu_queue = []
         self.select_screen(game_screen)
 
-    def control(self, screen):
-        if screen: screen.controller = self
-        return screen
-
     def save_game(self, **kwargs):
         if 'quitting' in kwargs:
             self.real_display('Saving game in file %s...'%self.savefile_str)
@@ -49,18 +42,18 @@ class ScreenController(object):
             self.display('Saving game in file %s...'%self.savefile_str)
         gamepackage.saves.save_game(self)
 
+    def stack_screen(self, screen):
+        if screen.is_menu:
+            self.menu_queue.append(screen)
+        else:
+            self.screen_queue.append(screen)
+    def add_screen(self, screen):
+        if self.current_screen: self.stack_screen(self.current_screen)
+        self.select_screen(screen)
     def select_screen(self, screen, **kwargs):
         self.current_screen = screen
-        if screen and 'norefresh' not in kwargs:
+        if screen and not kwargs.get('norefresh', False):
             screen.display_flag = True
-
-    def add_screen(self, screen):
-        if self.current_screen: 
-            if self.current_screen.is_menu:
-                self.menu_queue.append(self.current_screen)
-            else:
-                self.screen_queue.append(self.current_screen)
-        self.select_screen(screen)
 
     def next_screen(self, **kwargs):
         if self.menu_queue:
@@ -76,11 +69,18 @@ class ScreenController(object):
             self.add_screen(next_screen)
 
     def load_ui(self, ui_str):
+        if self.ui:
+            backup_queue = self.ui.event_queue
+        else:
+            backup_queue = None
         self.ui = getattr(sys.modules['uimodules.'+ui_str], 'UI')()
+        if backup_queue: self.ui.event_queue = backup_queue
         self.ui.ui_str = ui_str
         self.display("UI '%s' loaded..."%ui_str)
     def get_event(self):
         return self.ui.get_event()
+    def put_event_back(self, event):
+        self.ui.put_event_back(event)
     def display(self, text, **kwargs):
         if self.current_screen:
             self.current_screen.display(text, **kwargs)
@@ -112,10 +112,23 @@ class ScreenController(object):
             try:
                 screen.run(self)
             except ScreenDoneException as e:
-                if e.norefresh:
-                    self.next_screen(norefresh=1)
-                else:
-                    self.next_screen()
+                if e.uimodule:
+                    self.load_ui(e.uimodule)
+                if e.die:
+                    self.next_screen(norefresh=e.norefresh)
+                if e.savefile == 'new':
+                    self.load_save(new=True)
+                elif e.savefile: 
+                    self.load_save(e.savefile)
+                if e.next_screen:
+                    self.add_screen(e.next_screen)
+            except CloseMenusException as e:
+                self.menu_queue = []
+                if self.current_screen.is_menu: self.current_screen = None
+                if e.then_open == 'main':
+                    self.add_screen(DefaultMenu())
+                elif e.then_open:
+                    self.add_screen(e.then_open)
             finally:
                 self.temp_display(screen)
 

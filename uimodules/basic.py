@@ -53,6 +53,8 @@ class UI(object):
                 line =  (' '+line+' ').center(self.display_width, deco_char)
             print l_pad+line
 
+    def put_event_back(self, event):
+        self.event_queue.append(event)
 
     def get_event(self):
         try:
