@@ -95,12 +95,16 @@ class BaseScreen(object):
         prev_event = self.event_so_far
         event = self.event_so_far + base_event
         poss_matches = [x for x in self.event_triggers if x[:len(event)] == event]
+        if len(poss_matches) == 1:
+            return self.event_match(event)
         if not poss_matches and prev_event in self.event_triggers:
             controller.put_event_back(base_event)
             return self.event_match(prev_event)
 
         while event and not poss_matches:
             poss_matches = [x for x in self.event_triggers if x[:len(event)] == event]
+            if len(poss_matches) == 1:
+                return self.event_match(event)
             if not poss_matches: 
                 ignored, event = event[:1], event[1:]
                 self.ignored_chars += ignored
@@ -200,12 +204,16 @@ class MicroMenu(BaseScreen):
         raise ScreenDoneException(norefresh=True)
 
 class DefaultSpecials(MicroMenu):
-    def __init__(self):
+    def __init__(self, main=False):
         MicroMenu.__init__(self)
         self.name = "Default Specials"
         ###### STATE INFO ######
         self.event_triggers = {'quit':1, 'file':2, 'ui':3, 'refresh':4, 'menu':5, 'help':6, 'resume':7}
         self.helpstr = "Special options: "+' '.join(['#'+x.strip() for x in sorted(self.event_triggers)])+'\nType #help to for full description'
+        if main:
+            self.event_triggers.pop('menu')
+            self.helpstr = self.helpstr.replace('#menu', '(#menu)')
+
         #####
 
     def get_controller_info(self, controller):
@@ -220,11 +228,13 @@ class DefaultSpecials(MicroMenu):
             self.helpstr = self.helpstr.replace('#resume', '(#resume)')
 
     def fail_message(self, event_str):
-        if event_str and event_str == 'resume':
+        if event_str == 'resume':
             if not self.controller_info['savefile']:
                 self.display("You do not have a game loaded!")
             else:
                 self.display("You are already in game!")
+        elif event_str == 'menu':
+            self.display("You are already at the main menu!")
         else:
             self.display("'%s' is an invalid special option!"%event_str)
             self.display(self.helpstr)

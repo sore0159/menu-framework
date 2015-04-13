@@ -1,7 +1,7 @@
 import sys
-import gamepackage
+import gamepackage, uimodules
 from screens.templates import ScreenDoneException, QuitException, CloseMenusException
-from screens.defaults import DefaultMenu, MainDeco
+from screens.menus import DefaultMenu, MainDeco
 
 class ScreenController(object):
     def __init__(self, ui_str=None, savefile_str=None, new=False):
@@ -17,7 +17,7 @@ class ScreenController(object):
     def last_usage_info(self):
         return (self.savefile_str, self.ui.ui_str)
 
-    def load_save(self, savefile_str=None, new=False):
+    def load_save(self, savefile_str=None, new=False, **kwargs):
         if self.savefile_str: self.save_game()
         if new:
             savefile_str = gamepackage.saves.get_new_savename()
@@ -27,10 +27,11 @@ class ScreenController(object):
         else:
             game_screen , screen_q= gamepackage.saves.get_savedgame(savefile_str)
         self.savefile_str = savefile_str
-        if new:
-            self.display('Creating save file %s...'%self.savefile_str)
-        else:
-            self.display('Loading save file %s...'%self.savefile_str)
+        if not kwargs.pop('quiet', False):
+            if new:
+                self.display('Creating save file %s...'%self.savefile_str)
+            else:
+                self.display('Loading save file %s...'%self.savefile_str)
         self.screen_queue = screen_q
         self.menu_queue = []
         self.select_screen(game_screen)
@@ -68,15 +69,17 @@ class ScreenController(object):
             next_screen = DefaultMenu()
             self.add_screen(next_screen)
 
-    def load_ui(self, ui_str):
+    def load_ui(self, ui_str, **kwargs):
         if self.ui:
             backup_queue = self.ui.event_queue
+            self.ui.close()
         else:
             backup_queue = None
         self.ui = getattr(sys.modules['uimodules.'+ui_str], 'UI')()
         if backup_queue: self.ui.event_queue = backup_queue
         self.ui.ui_str = ui_str
-        self.display("UI '%s' loaded..."%ui_str)
+        if not kwargs.pop('quiet', False):
+            self.display("UI '%s' loaded..."%ui_str)
     def get_event(self):
         return self.ui.get_event()
     def put_event_back(self, event):
@@ -100,9 +103,10 @@ class ScreenController(object):
                 if num in display_bubbles: continue
                 else:
                     display_bubbles[num] = stuff
+        screen_list = []
         for num, stuff in sorted(display_bubbles.items()):
-            for line, arg_dict in stuff:
-                self.real_display(line, **arg_dict)
+            screen_list.extend(stuff)
+        self.ui.display_screen(screen_list)
 
     def run(self):
         if not self.current_screen:
@@ -140,6 +144,8 @@ class ScreenController(object):
         except QuitException: pass
         finally:
             if self.savefile_str: self.save_game(quitting=True)
-            self.real_display("Goodbye", center=2)
-            self.real_display("")
+            self.ui.close()
+            temp_ui = uimodules.basic.UI()
+            temp_ui.display("Goodbye", center=2)
+            temp_ui.display("")
 

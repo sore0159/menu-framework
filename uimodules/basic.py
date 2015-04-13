@@ -12,6 +12,8 @@ class UI(object):
         self.event_queue = deque()
         self.input_prompt = '\n>>> '
         self.char_dict = {1:'=', 2:'-', 3:' ', 4:'+'}
+    def close(self, **kwargs):
+        pass
 
     def wrap_text(self, text, width):
         if not text: return ['']
@@ -32,13 +34,12 @@ class UI(object):
                 tic = 1
         return wrap_list
 
-    def display(self, text='', **kwargs):
+    def format_output(self, text='', **kwargs):
         l_pad = ' '*self.left_padding
         divider = kwargs.get('divider', None)
         if divider:
             div_char = self.char_dict.get(divider, '-')
-            print l_pad+(div_char*self.display_width)
-            return 
+            return l_pad+(div_char*self.display_width)
         deco = kwargs.get('center', None)
         if deco:
             deco_char = self.char_dict.get(deco, ' ')
@@ -48,10 +49,20 @@ class UI(object):
             max_text_width -= 4
             l_pad+=' '*(4*kwargs['indent'])
         wrap_list = self.wrap_text(text, max_text_width)
+        result_str = ''
         for line in wrap_list:
             if 'center' in kwargs:
                 line =  (' '+line+' ').center(self.display_width, deco_char)
-            print l_pad+line
+            if result_str:
+                result_str += '\n'
+            result_str += l_pad+line
+        return result_str
+    def display(self, text='', **kwargs):
+        print self.format_output(text, **kwargs)
+
+    def display_screen(self, lines):
+        for text, kwargs in lines:
+            self.display(text, **kwargs)
 
     def put_event_back(self, event):
         self.event_queue.append(event)

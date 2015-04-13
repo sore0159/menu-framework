@@ -1,6 +1,6 @@
-import basic, screamer
+import basic, screamer, cursesui
 
-mod_list = ['basic', 'screamer']
+mod_list = ['basic', 'screamer', 'cursesui']
 uimodule_list = [(x, 'uimodules/'+x+'.py')[i] for x in mod_list for i in (0,1)]
 ui_help_str = 'Valid forms: uimodules/FILENAME.py or FILENAME'
 
