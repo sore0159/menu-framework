@@ -8,21 +8,18 @@ import curses
 
 class UI(basic.UI):
     def __init__(self):
+        basic.UI.__init__(self)
         self.ui_str = 'cursesui'
-        self.left_padding = 4
-        self.display_width = 70
-        self.event_queue = deque()
-        self.input_prompt = '\n>>> '
-        self.char_dict = {1:'=', 2:'-', 3:' ', 4:'+'}
         ##### CURSES FOILED AGAIN #####
         self.main_window = curses.initscr()
         curses.cbreak()
+        self.main_window.keypad(1)
         self.main_window.border(0)
         self.main_window.addstr("Curses UI Module Loaded...")
         self.main_window.refresh()
 
     def close(self, **kwargs):
-        # add printing dump of cur screen contents when done
+        self.main_window.keypad(0)
         curses.endwin()
 
     def display(self, text='', **kwargs):
@@ -44,9 +41,11 @@ class UI(basic.UI):
         except IndexError:
             try:
                 user_event = self.main_window.getch()
-            except (EOFError, KeyboardInterrupt):
+            except KeyboardInterrupt:
                 raise QuitException
             else:
-                return chr(user_event)
-
+                try:
+                    return chr(user_event)
+                except ValueError:
+                    return '!'
 

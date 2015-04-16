@@ -1,4 +1,4 @@
-from templates import ScreenDoneException, QuitException, DecorationScreen, CloseMenusException, BaseScreen, DefaultSpecials
+from .templates import ScreenDoneException, QuitException, DecorationScreen, CloseMenusException, BaseScreen, DefaultSpecials
 import gamepackage, uimodules
 
 class UIMenu(BaseScreen):
@@ -18,12 +18,7 @@ class UIMenu(BaseScreen):
         self.clear_triggers()
         self.state('UI Menu', center=2)
         info = self.controller_info
-        if info['cur_game']:
-            self.add_trigger('r', 1)
-            self.state("(r)Resume Current Game", indent=1)
-        if info['menu_q']:
-            self.add_trigger('m', 2)
-            self.state("(m)Back to Previous Menu", indent=1)
+
         cur_ui = info['cur_ui']
         other_uis = [x for x in uimodules.mod_list if x != cur_ui]
         other_uis.sort()
@@ -36,6 +31,14 @@ class UIMenu(BaseScreen):
             for i,ui in enumerate(other_uis):
                 self.state('(%s) %s'%(i, ui), indent=1)
                 self.add_trigger('%s'%i, i+3)
+        if info['cur_game'] or info['menu_q']:
+            self.state("Or:")
+        if info['cur_game']:
+            self.add_trigger('r', 1)
+            self.state("(r)Resume Current Game", indent=1)
+        if info['menu_q']:
+            self.add_trigger('m', 2)
+            self.state("(m)Back to Previous Menu", indent=1)
 
     def execute_trigger(self, trigger):
         if trigger == 1:
@@ -64,28 +67,31 @@ class SaveMenu(BaseScreen):
         self.clear_triggers()
         self.state('Saved Game Menu', center=2)
         info = self.controller_info
-        if info['cur_game']:
-            self.add_trigger('r', 1)
-            self.state("(r)Resume Current Game", indent=1)
-        if info['menu_q']:
-            self.add_trigger('m', 2)
-            self.state("(m)Back to Previous Menu", indent=1)
         savefile_list = gamepackage.saves.get_savefile_list()
         savefile_str = info['cur_save']
         savefile_list = [x for x in savefile_list if x != savefile_str and x[-4:] != '.pkl']
         savefile_list.sort()
         self.save_choices = savefile_list
+        if savefile_str:
+            self.state("Currently playing: %s"%savefile_str)
         if savefile_list:
             if savefile_str:
-                self.state("Currently playing: %s"%savefile_str)
                 self.state("Save current game and load:")
             else:
                 self.state("Load saved game:")
             for i, save_str in enumerate(savefile_list):
                 self.state("(%d) %s"%(i, save_str), indent=1)
                 self.add_trigger('%d'%i, 3+i)
+            if info['cur_game'] or info['menu_q']:
+                self.state("Or:")
         else:
             self.state("No saved games available to load!", indent=1)
+        if info['cur_game']:
+            self.add_trigger('r', 1)
+            self.state("(r)Resume Current Game", indent=1)
+        if info['menu_q']:
+            self.add_trigger('m', 2)
+            self.state("(m)Back to Previous Menu", indent=1)
 
     def execute_trigger(self, trigger):
         if trigger == 1:

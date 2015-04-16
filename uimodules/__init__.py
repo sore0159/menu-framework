@@ -1,4 +1,4 @@
-import basic, screamer, cursesui
+from . import basic, screamer, cursesui
 
 mod_list = ['basic', 'screamer', 'cursesui']
 uimodule_list = [(x, 'uimodules/'+x+'.py')[i] for x in mod_list for i in (0,1)]

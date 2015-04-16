@@ -58,7 +58,7 @@ class UI(object):
             result_str += l_pad+line
         return result_str
     def display(self, text='', **kwargs):
-        print self.format_output(text, **kwargs)
+        print( self.format_output(text, **kwargs))
 
     def display_screen(self, lines):
         for text, kwargs in lines:
@@ -72,7 +72,8 @@ class UI(object):
             return self.event_queue.pop()
         except IndexError:
             try:
-                user_event = raw_input(self.input_prompt)
+                user_event = input(self.input_prompt)
+                #user_event = raw_input(self.input_prompt)
             except (EOFError, KeyboardInterrupt):
                 self.display('')
                 raise QuitException

@@ -25,11 +25,19 @@ class CloseMenusException(Exception):
         self.then_open = then_open
 ##################################################
 class DebugDescr(object):
+    def __init__(self, name='debug'):
+        self.name = name
     def __get__(self, instance, owner):
-        return instance._debug
+        try:
+            info_d = instance._debug
+            return info_d[self.name]
+        except (AttributeError, KeyError):
+            raise AttributeError('%r object has no attribute %r'%(instance, self.name))
     def __set__(self, instance, val):
-        print "PING %s %s"%(instance, val)
-        instance._debug = val
+        print ("PING %s : %s : %s"%(instance, self.name, val))
+        info_d =getattr(instance, '_debug', {})
+        info_d[self.name] = val
+        instance._debug = info_d
 
 class BaseScreen(object):
     def __init__(self, default_bubble=1):
@@ -148,6 +156,7 @@ class BaseScreen(object):
 
     def set_state(self):
         self.clear_state()
+        self.clear_triggers()
         self.state('Base Screen', center=1)
         self.add_trigger('q', 1)
         self.display_flag = True

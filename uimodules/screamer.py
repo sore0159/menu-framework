@@ -1,6 +1,6 @@
 from collections import deque
 from screens.templates import QuitException, ScreenDoneException
-import basic
+from . import basic
   ######  Required by Menus:  ######
 # display(text, flag)
 # query(choices, special_choices)

@@ -11,6 +11,7 @@
 
 #FIXED UI = LAST
 #FIXED UI = screamer
+FIXED UI = cursesui
 #FIXED SV = LAST
 #FIXED SV = save000
 
