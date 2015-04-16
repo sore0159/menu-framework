@@ -1,5 +1,6 @@
 import os
-import cPickle as pickle
+import pickle
+#import cPickle as pickle
 
 def get_savefile_list():
     savefile_list = [(x[:-4], 'savedata/'+x)[i] for x in os.listdir('savedata') if x[-4:]=='.pkl' for i in (0,1)]
